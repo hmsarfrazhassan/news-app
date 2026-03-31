@@ -91,3 +91,20 @@ export const login = async (req, res) => {
     });
   }
 };
+
+export const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+    if (user) {
+      return res.status(200).json({
+        success: true,
+        user,
+      });
+    }
+  } catch (error) {
+    return res.status(200).json({
+      success: false,
+      message: `Error ${error.message}`,
+    });
+  }
+};
