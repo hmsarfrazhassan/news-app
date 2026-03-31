@@ -32,13 +32,10 @@ const userSchema = new mongoose.Schema(
     imageUrl: {
       type: String,
     },
-    isAdmin: {
-      type: Boolean,
-      default: false,
-    },
-    isEditor: {
-      type: Boolean,
-      default: false,
+    role: {
+      type: String,
+      enum: ["user", "editor", "admin"],
+      default: "user",
     },
   },
   { timestamps: true },
