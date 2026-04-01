@@ -52,14 +52,14 @@ export const login = async (req, res) => {
         message: "Email and password are required",
       });
     }
-    const isUser = await User.findOne({ email });
-    if (!isUser) {
+    const user = await User.findOne({ email });
+    if (!user) {
       return res.status(400).json({
         success: false,
         message: "Use valid email and password.",
       });
     }
-    const isMatched = await bcrypt.compare(password, isUser.password);
+    const isMatched = await bcrypt.compare(password, user.password);
 
     if (!isMatched) {
       return res.status(400).json({
@@ -69,20 +69,25 @@ export const login = async (req, res) => {
     }
 
     if (isMatched) {
-      const token = jwt.sign(
-        {
-          userId: isUser._id,
-          email: isUser.email,
-          useranem: isUser.username,
-          role: isUser.role,
-        },
-        process.env.JWT_SECRET_KEY,
-        { expiresIn: process.env.TOKEN_EXP || "1h" },
-      );
+      const payload = {
+        userId: user._id,
+        email: user.email,
+        useranem: user.username,
+        role: user.role,
+      };
+      const accessToken = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
+        expiresIn: process.env.TOKEN_EXP || "15m",
+      });
+      const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET_KEY, {
+        expiresIn: "7d",
+      });
+      await User.findByIdAndUpdate(user._id, { refreshToken });
+
       res.status(200).json({
         success: true,
         message: "User successfully loggedin",
-        token,
+        token: accessToken,
+        refreshToken: refreshToken,
       });
     }
   } catch (error) {
@@ -91,6 +96,14 @@ export const login = async (req, res) => {
       message: `Error: ${error.message}`,
     });
   }
+};
+
+// On logout — just revoke it
+export const logout = async (req, res) => {
+  await User.findByIdAndUpdate(req.user.userId, { refreshToken: null });
+  return res
+    .status(200)
+    .json({ success: true, message: "Logged out successfully" });
 };
 
 export const getUserProfile = async (req, res) => {
