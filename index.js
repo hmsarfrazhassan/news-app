@@ -4,6 +4,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import categotyRoutes from "./routes/categoryRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
+import reactionRoutes from "./routes/reactionRoutes.js";
 
 const app = express();
 connectDB();
@@ -13,6 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/v1", authRoutes);
 app.use("/api/v1/category", categotyRoutes);
 app.use("/api/v1/post", postRoutes);
+app.use("/api/v1/reaction", reactionRoutes);
 
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
