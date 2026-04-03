@@ -37,7 +37,6 @@ export const addReaction = async (req, res) => {
     let statusCode = 200;
 
     if (!existingReaction) {
-      // No reaction yet — create one
       responseData = await Reaction.create({
         userId,
         postId,
@@ -46,11 +45,9 @@ export const addReaction = async (req, res) => {
       responseMessage = `${reactType} added`;
       statusCode = 201;
     } else if (existingReaction.reactionType === reactType) {
-      // Same reaction — toggle it off
       await Reaction.deleteOne({ _id: existingReaction._id });
       responseMessage = `${reactType} removed`;
     } else {
-      // Switching reaction type
       existingReaction.reactionType = reactType;
       responseData = await existingReaction.save();
       responseMessage = `Reaction updated to ${reactType}`;
