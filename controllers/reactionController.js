@@ -1,11 +1,8 @@
 import Reaction from "../models/Reaction.js";
 import Post from "../models/Post.js";
-import User from "../models/User.js";
-
 export const addReaction = async (req, res) => {
   try {
     const { postId, reactionType } = req.body;
-    const reactType = reactionType.toLowerCase();
 
     if (!postId || !reactionType) {
       return res.status(400).json({
@@ -13,6 +10,9 @@ export const addReaction = async (req, res) => {
         message: "PostId and reactionType are required",
       });
     }
+
+    const reactType = reactionType.toLowerCase();
+
     if (!["like", "dislike"].includes(reactType)) {
       return res.status(400).json({
         success: false,
@@ -20,59 +20,88 @@ export const addReaction = async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.user.userId);
-    const post = await Post.findById(postId);
+    const userId = req.user.userId;
 
-    if (!user || !post) {
-      return res.status(400).json({
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({
         success: false,
-        message: "Invalid request",
+        message: "Post not found",
       });
     }
 
-    const existingReaction = await Reaction.findOne({
-      userId: req.user.userId,
-      postId,
-    });
+    const existingReaction = await Reaction.findOne({ userId, postId });
+
+    let responseMessage;
+    let responseData = null;
+    let statusCode = 200;
 
     if (!existingReaction) {
-      const newReaction = await Reaction.create({
-        userId: req.user.userId,
+      // No reaction yet — create one
+      responseData = await Reaction.create({
+        userId,
         postId,
-        reactionType,
+        reactionType: reactType,
       });
-
-      return res.status(201).json({
-        success: true,
-        message: `${reactType} added`,
-        data: newReaction,
-      });
-    }
-
-    if (existingReaction.reactionType === reactType) {
+      responseMessage = `${reactType} added`;
+      statusCode = 201;
+    } else if (existingReaction.reactionType === reactType) {
+      // Same reaction — toggle it off
       await Reaction.deleteOne({ _id: existingReaction._id });
-
-      return res.status(200).json({
-        success: true,
-        message: `${reactType} removed`,
-      });
+      responseMessage = `${reactType} removed`;
+    } else {
+      // Switching reaction type
+      existingReaction.reactionType = reactType;
+      responseData = await existingReaction.save();
+      responseMessage = `Reaction updated to ${reactType}`;
     }
 
-    existingReaction.reactionType = reactType;
-    await existingReaction.save();
+    const [likes, dislikes] = await Promise.all([
+      Reaction.countDocuments({ postId, reactionType: "like" }),
+      Reaction.countDocuments({ postId, reactionType: "dislike" }),
+    ]);
 
-    return res.status(200).json({
+    await Post.findByIdAndUpdate(postId, { $set: { likes, dislikes } });
+
+    return res.status(statusCode).json({
       success: true,
-      message: `Reaction updated to ${reactType}`,
-      data: existingReaction,
+      message: responseMessage,
+      data: responseData,
     });
   } catch (error) {
     console.error(error);
-
     return res.status(500).json({
       success: false,
       message: "Server error",
-      erroe: error.message,
+      error: error.message,
+    });
+  }
+};
+
+export const getAllReactedPostsByUser = async (req, res) => {
+  try {
+    const posts = await Reaction.find({ userId: req.user.userId }).populate(
+      "postId",
+    );
+    if (!posts.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No record found",
+      });
+    }
+    const formatted = posts.map((r) => ({
+      reactionType: r.reactionType,
+      post: r.postId,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: formatted,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
     });
   }
 };
