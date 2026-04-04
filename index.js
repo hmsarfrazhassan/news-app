@@ -6,6 +6,7 @@ import categotyRoutes from "./routes/categoryRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import reactionRoutes from "./routes/reactionRoutes.js";
 import favoriteRoutes from "./routes/favoriteRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 const app = express();
 connectDB();
@@ -17,6 +18,7 @@ app.use("/api/v1/category", categotyRoutes);
 app.use("/api/v1/post", postRoutes);
 app.use("/api/v1/reaction", reactionRoutes);
 app.use("/api/v1/favorite", favoriteRoutes);
+app.use("/api/v1/report", reportRoutes);
 
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {

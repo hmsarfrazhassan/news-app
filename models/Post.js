@@ -47,32 +47,12 @@ const postSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    isFlagged: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
 
-// postSchema.pre("save", function () {
-//   if (!this.slug) {
-//     this.slug = slugify(this.title, { lower: true, strict: true });
-//   }
-// });
-
-// postSchema.pre("save", async function (next) {
-//   if (!this.slug) {
-//     let baseSlug = slugify(this.title, { lower: true, strict: true });
-//     let slug = baseSlug;
-
-//     let counter = 1;
-
-//     // 🔁 Check for existing slug
-//     while (await newsPost.findOne({ slug })) {
-//       slug = `${baseSlug}-${counter}`;
-//       counter++;
-//     }
-
-//     this.slug = slug;
-//   }
-
-//   next();
-// });
 export default mongoose.model("Post", postSchema);
