@@ -38,8 +38,22 @@ const userSchema = new mongoose.Schema(
       default: "user",
     },
     refreshToken: String,
+    status: {
+      type: String,
+      enum: ["active", "disabled", "suspended"],
+      default: "active",
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
+
+userSchema.pre(/^find/, function (next) {
+  this.where({ isDeleted: false });
+  next();
+});
 
 export default mongoose.model("User", userSchema);

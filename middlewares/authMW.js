@@ -12,6 +12,13 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
     const user = await User.findById(decoded.userId);
+
+    if (user.status !== "active") {
+      return res.status(401).json({
+        success: false,
+        message: "Account is disabled",
+      });
+    }
     if (!user || !user.refreshToken) {
       return res.status(401).json({
         success: false,
